@@ -16,20 +16,35 @@
 
       ];
       systems = [ "x86_64-linux" "aarch64-darwin" "aarch64-linux" "x86_64-darwin" ];
-      perSystem = { config, self', inputs', pkgs, system, ... }: {
-        # Per-system attributes can be defined here. The self' and inputs'
-        # module parameters provide easy access to attributes of the same
-        # system.
+      perSystem = { config, self', inputs', pkgs, system, ... }:
+        let
+          naersk' = pkgs.callPackage inputs.naersk { };
+        in
+        {
+          # Per-system attributes can be defined here. The self' and inputs'
+          # module parameters provide easy access to attributes of the same
+          # system.
 
-        devShells.default = pkgs.mkShell {
-          nativeBuildInputs = with pkgs;
-            [
-              rustc
-              cargo
-              clippy
-            ];
+          packages.default = naersk'.buildPackage {
+            src = ./.;
+            nativeBuildInputs = with pkgs; [ pkg-config ];
+            buildInputs = with pkgs; [ openssl ];
+          };
+
+          devShells.default = pkgs.mkShell {
+            nativeBuildInputs = with pkgs;
+              [
+                rustc
+                cargo
+                clippy
+                pkg-config
+              ];
+            buildInputs = with pkgs;
+              [
+                openssl
+              ];
+          };
         };
-      };
       flake = {
         # The usual flake attributes can be defined here, including system-
         # agnostic ones like nixosModule and system-enumerating ones, although
